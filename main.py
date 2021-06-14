@@ -96,9 +96,6 @@ def extract_files():
 
 def prepare_data():
     ref = SeqIO.parse(open("GRCh38_latest_genomic.fna"), 'fasta')
-    for r in ref:
-        print(r.id)
-    return 
     sequences = {}
     for chromosome in chromosomes:
         sequences[chromosome] = next(
@@ -110,8 +107,8 @@ def prepare_data():
         frame = pd.read_csv(file, sep='\t', skiprows=5)
         frame = frame[['Hugo_Symbol', 'NCBI_Build', 'Chromosome', 'Start_Position', 'End_Position', 'Strand', 'Variant_Classification',
                        'Variant_Type', 'Reference_Allele',	'Tumor_Seq_Allele1', 'Tumor_Seq_Allele2', 'Allele',	'Gene',	'Feature', 'Feature_type']]
-        frame['Sequence'] = frame.apply(lambda row: (str(sequences[row['Chromosome']])[
-                                        row['Start_Position']-1:row['End_Position']]), axis=1)
+        frame=frame.loc[frame['Variant_Type'] == 'SNP']
+        frame['Sequence'] = frame.apply(lambda row: (str(sequences[row['Chromosome']])[0:row['Start_Position']-1] + row['Allele'] + str(sequences[row['Chromosome']])[row['End_Position']:len(str(sequences[row['Chromosome']]))]), axis=1)
         for c in classes:
             if c in file:
                 frame['cancer_type'] =  classes[c]
