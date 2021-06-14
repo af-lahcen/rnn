@@ -12,6 +12,7 @@ import gzip
 import shutil
 import tarfile
 import os
+import requests, sys
 
 # Cases
 classes = {
@@ -93,6 +94,19 @@ def extract_files():
             os.system("gzip -dk " + file)
             os.system("cd ..")
 
+def get_sequence(row,sequences):
+    gene = get_gene(row['Gene'])
+    if gene is None:
+        return None
+    return str(sequences[row['Chromosome']])[gene['start']:row['Start_Position']-1] + row['Allele'] + str(sequences[row['Chromosome']])[row['End_Position']:gene['end']]
+
+def get_gene(id):
+    server = "https://rest.ensembl.org"
+    ext = "/lookup/id/"+id
+    r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
+    if not r.ok:
+        return None
+    return r.json()
 
 def prepare_data():
     ref = SeqIO.parse(open("GRCh38_latest_genomic.fna"), 'fasta')
@@ -108,7 +122,7 @@ def prepare_data():
         frame = frame[['Hugo_Symbol', 'NCBI_Build', 'Chromosome', 'Start_Position', 'End_Position', 'Strand', 'Variant_Classification',
                        'Variant_Type', 'Reference_Allele',	'Tumor_Seq_Allele1', 'Tumor_Seq_Allele2', 'Allele',	'Gene',	'Feature', 'Feature_type']]
         frame=frame.loc[frame['Variant_Type'] == 'SNP']
-        frame['Sequence'] = frame.apply(lambda row: (str(sequences[row['Chromosome']])[0:row['Start_Position']-1] + row['Allele'] + str(sequences[row['Chromosome']])[row['End_Position']:len(str(sequences[row['Chromosome']]))]), axis=1)
+        frame['Sequence'] = frame.apply(lambda row: get_sequence(row,sequences) , axis=1)
         for c in classes:
             if c in file:
                 frame['cancer_type'] =  classes[c]
@@ -116,6 +130,5 @@ def prepare_data():
     data = pd.concat(frames)
     data.to_csv("data.csv", index=False)
 prepare_data()
-
 
 #extract_files()
