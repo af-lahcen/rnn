@@ -117,7 +117,7 @@ def prepare_data():
     files = glob.glob('../data/**/**.maf', recursive=True)
     files = list(dict.fromkeys(files))
     frames = list()
-    newFile = False
+    newFile = True
     for file in files:
         frame = pd.read_csv(file, sep='\t', skiprows=5)
         frame = frame[['Hugo_Symbol', 'NCBI_Build', 'Chromosome', 'Start_Position', 'End_Position', 'Strand', 'Variant_Classification',
@@ -129,7 +129,7 @@ def prepare_data():
                 frame['cancer_type'] =  classes[c]
         if newFile :
             frame.to_csv("data.csv", mode ='w' , header=True ,index=False)
-            newFile = True
+            newFile = False
         else:
             frame.to_csv("data.csv", mode ='a' , header=False ,index=False)
         #frames.append(frame)
