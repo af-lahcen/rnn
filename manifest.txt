@@ -1,0 +1,3 @@
+id	filename	md5	size	state
+678ed8fb-53e0-4cce-9c12-d603c3219834	678ed8fb-53e0-4cce-9c12-d603c3219834/TCGA.LUSC.varscan.678ed8fb-53e0-4cce-9c12-d603c3219834.DR-10.0.somatic.maf.gz	afe3c53c5fc30704735990b3b66d5af3	39515468	validated
+\N	678ed8fb-53e0-4cce-9c12-d603c3219834/annotations.txt	dc027fdb53834996ead703420aa9e4b0	29509	\N
