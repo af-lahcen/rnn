@@ -77,7 +77,7 @@ chromosomes = {"chr1": "NC_000001.11",
 
 
 def extract_files():
-    files = glob.glob('data/**/*.gz', recursive=True)
+    files = glob.glob('../data/**/*.gz', recursive=True)
     files = list(dict.fromkeys(files))
     for file in files:
         print(file)
@@ -114,7 +114,7 @@ def prepare_data():
     for chromosome in chromosomes:
         sequences[chromosome] = next(
             (str(x.seq) for i, x in enumerate(ref) if x.id == chromosomes[chromosome]), None)
-    files = glob.glob('./data/**/**.maf', recursive=True)
+    files = glob.glob('../data/**/**.maf', recursive=True)
     files = list(dict.fromkeys(files))
     frames = list()
     newFile = False
