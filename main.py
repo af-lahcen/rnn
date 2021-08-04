@@ -6,7 +6,7 @@ import glob
 
 import csv
 
-import pandas as pd
+from dask import dataframe as pd
 import numpy as np
 import gzip
 import shutil
@@ -16,6 +16,7 @@ import requests, sys
 
 # Cases
 classes = {
+    "NORMAL": "0",
     "TCGA.BRCA": "1",
     "TCGA.LUAD": "2",
     "TCGA.UCEC": "3",
@@ -114,27 +115,53 @@ def prepare_data():
     for chromosome in chromosomes:
         sequences[chromosome] = next(
             (str(x.seq) for i, x in enumerate(ref) if x.id == chromosomes[chromosome]), None)
-    files = glob.glob('../data/**/**.maf', recursive=True)
+    
+
+
+    files = glob.glob('./data/**/**.maf', recursive=True)
     files = list(dict.fromkeys(files))
-    frames = list()
-    newFile = True
+    newTrainFile = True
+    newTestFile = True
+    newValidationFile = True
     for file in files:
         frame = pd.read_csv(file, sep='\t', skiprows=5)
-        frame = frame[['Hugo_Symbol', 'NCBI_Build', 'Chromosome', 'Start_Position', 'End_Position', 'Strand', 'Variant_Classification',
-                       'Variant_Type', 'Reference_Allele',	'Tumor_Seq_Allele1', 'Tumor_Seq_Allele2', 'Allele',	'Gene',	'Feature', 'Feature_type']]
+        frame = frame[['Hugo_Symbol', 'NCBI_Build', 'Chromosome', 'Start_Position', 'End_Position', 'Strand', 'Variant_Classification','Variant_Type', 'Reference_Allele',	'Tumor_Seq_Allele1', 'Tumor_Seq_Allele2', 'Allele',	'Gene',	'Feature', 'Feature_type']]
         frame=frame.loc[frame['Variant_Type'] == 'SNP']
+        frame = frame.head(1000)
         frame['Sequence'] = frame.apply(lambda row: get_sequence(row,sequences) , axis=1)
         for c in classes:
             if c in file:
                 frame['cancer_type'] =  classes[c]
-        if newFile :
-            frame.to_csv("data.csv", mode ='w' , header=True ,index=False)
-            newFile = False
+                
+        train, validate, test = train_validate_test_split(frame)
+        if newTrainFile :
+            train.to_csv("data_train.csv", mode ='w' , header=True ,index=False)
+            newTrainFile = False
         else:
-            frame.to_csv("data.csv", mode ='a' , header=False ,index=False)
-        #frames.append(frame)
-    #data = pd.concat(frames)
-    #data.to_csv("data.csv", index=False)
+            train.to_csv("data_train.csv", mode ='a' , header=False ,index=False)
+        
+        if newTestFile :
+            test.to_csv("data_test.csv", mode ='w' , header=True ,index=False)
+            newTestFile = False
+        else:
+            test.to_csv("data_test.csv", mode ='a' , header=False ,index=False)
+
+        if newValidationFile :
+            validate.to_csv("data_validation.csv", mode ='w' , header=True ,index=False)
+            newValidationFile = False
+        else:
+            validate.to_csv("data_validation.csv", mode ='a' , header=False ,index=False)
+
+def train_validate_test_split(df, train_percent=.6, validate_percent=.2, seed=None):
+    np.random.seed(seed)
+    perm = np.random.permutation(df.index)
+    m = len(df.index)
+    train_end = int(train_percent * m)
+    validate_end = int(validate_percent * m) + train_end
+    train = df.iloc[perm[:train_end]]
+    validate = df.iloc[perm[train_end:validate_end]]
+    test = df.iloc[perm[validate_end:]]
+    return train, validate, test
+
 prepare_data()
 
-#extract_files()
